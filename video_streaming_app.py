@@ -10,6 +10,26 @@ from ultralytics import YOLO
 # --- Page Config ---
 st.set_page_config(page_title="YOLOv5 Video Detector", layout="wide")
 
+# Custom CSS 
+st.markdown(""" 
+    <style> 
+    .stApp { 
+        background-color: #121212; 
+        color: #00ffe1; 
+        font-family: 'Segoe UI'; 
+    } 
+    .css-1v0mbdj, .css-1d391kg { 
+        background-color: #1f1f1f; 
+        border: 1px solid #00ffe1; 
+        color: #00ffe1; 
+    } 
+    .css-1v0mbdj:hover { 
+        background-color: #00ffe1; 
+        color: #121212; 
+    } 
+    </style> 
+""", unsafe_allow_html=True)
+
 # --- Sidebar ---
 st.sidebar.title("⚙ Settings")
 video_file = st.sidebar.file_uploader("Upload a video", type=["mp4", "mov", "avi"])
@@ -17,7 +37,7 @@ confidence = st.sidebar.slider("Detection Confidence", 0.2, 0.9, 0.5)
 run_detection = st.sidebar.button("Run Detection")
 
 # --- Main Title ---
-st.title("🧠 YOLOv5 Object Detection")
+st.title("YOLOv5 Object Detection")
 
 # --- Load YOLOv5 Model ---
 model = YOLO("yolov5s.pt")  # Use a stable model
