@@ -34,7 +34,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-st.title("🧠 Object Detection Dashboard")
+st.title("Object Detection Dashboard")
 st.subheader("Upload a video, run detection, and explore the data")
 
 uploaded_file = st.file_uploader("🎥 Upload your video", type=["mp4", "avi"])
