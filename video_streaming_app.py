@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
-from Ultralytics import YOLO
+from ultralytics import YOLO
 
 # Load YOLOv5 model
 model = YOLO('yolov5nu')
