@@ -1,114 +1,76 @@
 import streamlit as st
 import cv2
 import tempfile
-import torch
 import os
-import numpy as np
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
-from  ultralytics import YOLO
+from ultralytics import YOLO
 
-# Load YOLOv5 model
-model = YOLO('yolov5nu.pt')
+# --- Page Config ---
+st.set_page_config(page_title="YOLOv5 Video Detector", layout="wide")
 
-# Page config
-st.set_page_config(page_title="Object Detection Dashboard", layout="wide")
+# --- Sidebar ---
+st.sidebar.title("⚙ Settings")
+video_file = st.sidebar.file_uploader("Upload a video", type=["mp4", "mov", "avi"])
+confidence = st.sidebar.slider("Detection Confidence", 0.2, 0.9, 0.5)
+run_detection = st.sidebar.button("Run Detection")
 
-# Custom CSS
-st.markdown("""
-    <style>
-    .stApp {
-        background-color: #121212;
-        color: #00ffe1;
-        font-family: 'Segoe UI';
-    }
-    .css-1v0mbdj, .css-1d391kg {
-        background-color: #1f1f1f;
-        border: 1px solid #00ffe1;
-        color: #00ffe1;
-    }
-    .css-1v0mbdj:hover {
-        background-color: #00ffe1;
-        color: #121212;
-    }
-    </style>
-""", unsafe_allow_html=True)
+# --- Main Title ---
+st.title("🧠 YOLOv5 Object Detection")
 
-st.title("Object Detection Dashboard")
-st.subheader("Upload a video, run detection, and explore the data")
+# --- Load YOLOv5 Model ---
+model = YOLO("yolov5s.pt")  # Use a stable model
 
-uploaded_file = st.file_uploader("🎥 Upload your video", type=["mp4", "avi"])
-save_dir = st.text_input("📁 Enter save directory", "C:/Users/zeena/Desktop/advanced ai")
+# --- Detection Logic ---
+if video_file and run_detection:
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as temp_video:
+        temp_video.write(video_file.read())
+        temp_video_path = temp_video.name
 
-if uploaded_file and save_dir:
-    with tempfile.NamedTemporaryFile(delete=False) as temp_input:
-        temp_input.write(uploaded_file.read())
-        input_path = temp_input.name
-
-    output_path = os.path.join(save_dir, "annotated_output.mp4")
-
-    cap = cv2.VideoCapture(input_path)
-    fps = cap.get(cv2.CAP_PROP_FPS)
+    cap = cv2.VideoCapture(temp_video_path)
     width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-    out = cv2.VideoWriter(output_path, fourcc, fps, (width, height))
+    fps = cap.get(cv2.CAP_PROP_FPS)
 
-    frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-    progress_bar = st.progress(0)
-    preview_frame = st.empty()
+    output_path = os.path.join(tempfile.gettempdir(), "annotated_output.mp4")
+    out = cv2.VideoWriter(output_path, cv2.VideoWriter_fourcc(*'mp4v'), fps, (width, height))
 
-    # Data collection
-    detection_data = []
+    object_counts = []
+    stframe = st.empty()
 
-    st.text("🔍 Processing frames...")
-
-    current_frame = 0
     while cap.isOpened():
-        success, frame = cap.read()
-        if not success:
+        ret, frame = cap.read()
+        if not ret:
             break
 
-        results = model(frame)[0]
-        annotated_frame = results.plot()
+        results = model(frame, conf=confidence)
+        annotated_frame = results[0].plot()
         out.write(annotated_frame)
 
-        # Collect detection stats
-        labels = results.names
-        detected = results.boxes.cls.tolist()
-        counts = pd.Series(detected).value_counts().to_dict()
-        frame_stats = {labels[int(k)]: v for k, v in counts.items()}
-        frame_stats["frame"] = current_frame
-        detection_data.append(frame_stats)
+        labels = results[0].boxes.cls.tolist()
+        object_counts.extend(labels)
 
-        current_frame += 1
-        if current_frame % 30 == 0:
-            img_rgb = cv2.cvtColor(annotated_frame, cv2.COLOR_BGR2RGB)
-            preview_frame.image(img_rgb, caption=f"Frame {current_frame}", use_container_width=True)
-
-
-        progress_bar.progress(min(current_frame / frame_count, 1.0))
+        stframe.image(annotated_frame, channels="BGR", use_column_width=True)
 
     cap.release()
     out.release()
 
-    st.success("✅ Detection complete!")
-    st.video(output_path)
+    # --- Download Annotated Video ---
+    with open(output_path, "rb") as f:
+        st.download_button("📥 Download Annotated Video", f, file_name="annotated_output.mp4")
 
-    with open(output_path, "rb") as file:
-        st.download_button("📥 Download Annotated Video", file.read(), "annotated_output.mp4", mime="video/mp4")
+    # --- Correlation Heatmap ---
+    st.subheader("📊 Object Detection Correlation Heatmap")
+    df = pd.DataFrame(object_counts, columns=["class_id"])
+    df["class_name"] = df["class_id"].apply(lambda x: model.names[int(x)])
+    count_df = df["class_name"].value_counts().reset_index()
+    count_df.columns = ["Object", "Count"]
 
-    # Dashboard
-    st.header("📊 Detection Dashboard")
+    corr_matrix = pd.DataFrame(index=model.names.values(), columns=model.names.values()).fillna(0)
+    for obj in count_df["Object"]:
+        corr_matrix.loc[obj, obj] = count_df[count_df["Object"] == obj]["Count"].values[0]
 
-    df = pd.DataFrame(detection_data).fillna(0)
-    st.dataframe(df.style.background_gradient(cmap="cool"), use_container_width=True)
-
-    st.subheader("🔥 Detection Heatmap")
-    fig, ax = plt.subplots(figsize=(12, 6))
-    sns.heatmap(df.drop(columns=["frame"]).T, cmap="mako", cbar=True, ax=ax)
-    ax.set_xlabel("Frame")
-    ax.set_ylabel("Object Class")
+    fig, ax = plt.subplots(figsize=(10, 6))
+    sns.heatmap(corr_matrix, annot=True, fmt=".0f", cmap="coolwarm", ax=ax)
     st.pyplot(fig)
-# preview_frame.image(img_rgb, caption=f"Frame {current_frame}", use_container_width=True)
