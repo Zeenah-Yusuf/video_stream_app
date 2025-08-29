@@ -3,6 +3,7 @@ torch
 torchvision
 opencv-python-headless
 numpy
+seaborn
 pandas
 ultralytics
 pillow
