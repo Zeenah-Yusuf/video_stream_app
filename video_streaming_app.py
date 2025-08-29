@@ -34,7 +34,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-st.title(" Object Detection Dashboard")
+st.title("🧠 Object Detection Dashboard")
 st.subheader("Upload a video, run detection, and explore the data")
 
 uploaded_file = st.file_uploader("🎥 Upload your video", type=["mp4", "avi"])
@@ -87,8 +87,6 @@ if uploaded_file and save_dir:
             img_rgb = cv2.cvtColor(annotated_frame, cv2.COLOR_BGR2RGB)
             preview_frame.image(img_rgb, caption=f"Frame {current_frame}", use_container_width=True)
 
-
-
         progress_bar.progress(min(current_frame / frame_count, 1.0))
 
     cap.release()
@@ -101,12 +99,12 @@ if uploaded_file and save_dir:
         st.download_button("📥 Download Annotated Video", file.read(), "annotated_output.mp4", mime="video/mp4")
 
     # Dashboard
-    st.header(" Detection Dashboard")
+    st.header("📊 Detection Dashboard")
 
     df = pd.DataFrame(detection_data).fillna(0)
     st.dataframe(df.style.background_gradient(cmap="cool"), use_container_width=True)
 
-    st.subheader(" Detection Heatmap")
+    st.subheader("🔥 Detection Heatmap")
     fig, ax = plt.subplots(figsize=(12, 6))
     sns.heatmap(df.drop(columns=["frame"]).T, cmap="mako", cbar=True, ax=ax)
     ax.set_xlabel("Frame")
