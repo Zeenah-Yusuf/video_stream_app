@@ -82,9 +82,11 @@ if uploaded_file and save_dir:
         detection_data.append(frame_stats)
 
         current_frame += 1
+        preview_frame = st.empty()
         if current_frame % 30 == 0:
             img_rgb = cv2.cvtColor(annotated_frame, cv2.COLOR_BGR2RGB)
             preview_frame.image(img_rgb, caption=f"Frame {current_frame}", use_container_width=True)
+
 
 
         progress_bar.progress(min(current_frame / frame_count, 1.0))
