@@ -9,7 +9,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 
 # Load YOLOv5 model
-model = torch.hub.load('ultralytics/yolov5', 'yolov5s')
+model = YOLO('yolov5nu')
 
 # Page config
 st.set_page_config(page_title="Object Detection Dashboard", layout="wide")
