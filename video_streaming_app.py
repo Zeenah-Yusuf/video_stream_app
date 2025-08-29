@@ -71,7 +71,7 @@ if video_file and run_detection:
         labels = results[0].boxes.cls.tolist()
         object_counts.extend(labels)
 
-        stframe.image(annotated_frame, channels="BGR", use_column_width=True)
+        stframe.image(annotated_frame, channels="BGR", use_container_width=True)
 
     cap.release()
     out.release()
