@@ -26,12 +26,17 @@ st.markdown("""
 st.sidebar.title("⚙ Input Settings")
 input_mode = st.sidebar.radio("Choose Input Mode", ["Video Upload", "Camera Snapshot"])
 confidence = st.sidebar.slider("Detection Confidence", 0.5, 0.95, 0.85)
+frame_skip = st.sidebar.slider("Frame Skip (for speed)", 1, 5, 2)
 
 # --- Main Title ---
 st.title("YOLOv5 Object Detection with Tracking & Alerts")
 
-# Load model and tracker
-model = YOLO('yolov5nu')
+# --- Load Model (cached) ---
+@st.cache_resource
+def load_model():
+    return YOLO('yolov5nu')
+
+model = load_model()
 tracker = Sort()
 alert_classes = ["knife", "gun", "vehicle", "person"]
 
@@ -63,6 +68,9 @@ if input_mode == "Video Upload":
                 break
 
             frame_count += 1
+            if frame_count % frame_skip != 0:
+                continue
+
             timestamp = round(frame_count / fps, 2)
             results = model(frame, conf=confidence)
             boxes = results[0].boxes
@@ -73,7 +81,7 @@ if input_mode == "Video Upload":
             if boxes is not None and boxes.cls is not None:
                 for cls_id, conf_score, box in zip(boxes.cls.tolist(), boxes.conf.tolist(), boxes.xyxy.tolist()):
                     if conf_score >= confidence:
-                        x1, y1, x2, y2 = box
+                        x1, y1, x2, y2 = map(int, box)
                         detections.append([x1, y1, x2, y2, conf_score])
                         class_map[(x1, y1, x2, y2)] = model.names[int(cls_id)]
 
@@ -83,10 +91,10 @@ if input_mode == "Video Upload":
             stframe.image(annotated_frame, channels="BGR", use_container_width=True)
 
             for track in track_results:
-                x1, y1, x2, y2, track_id = track
+                x1, y1, x2, y2, track_id = map(int, track)
                 key = (x1, y1, x2, y2)
                 class_name = class_map.get(key, "Unknown")
-                conf_score = next((d[4] for d in detections if d[:4] == list(key)), 0)
+                conf_score = next((d[4] for d in detections if tuple(map(int, d[:4])) == key), 0)
                 alert_triggered = "Yes" if class_name in alert_classes else "No"
 
                 if alert_triggered == "Yes":
@@ -98,10 +106,10 @@ if input_mode == "Video Upload":
                     "Object ID": int(track_id),
                     "Class": class_name,
                     "Confidence (%)": round(conf_score * 100, 2),
-                    "X1": int(x1),
-                    "Y1": int(y1),
-                    "X2": int(x2),
-                    "Y2": int(y2),
+                    "X1": x1,
+                    "Y1": y1,
+                    "X2": x2,
+                    "Y2": y2,
                     "Alert Triggered": alert_triggered
                 })
 
@@ -120,7 +128,24 @@ if input_mode == "Video Upload":
 
             with open(excel_path, "rb") as ef:
                 st.download_button("📊 Download Detection Log (Excel)", ef, file_name="detection_log.xlsx")
-
+        # --- Dashboard Summary ---
+        if detection_log:
+            st.subheader("📈 Detection Summary")
+            df_summary = pd.DataFrame(detection_log)
+        
+            total_frames = df_summary["Frame"].nunique() if "Frame" in df_summary else 1
+            total_detections = len(df_summary)
+            total_alerts = df_summary[df_summary["Alert Triggered"] == "Yes"].shape[0]
+            class_counts = df_summary["Class"].value_counts()
+        
+            col1, col2, col3 = st.columns(3)
+            col1.metric("Frames Processed", total_frames)
+            col2.metric("Total Detections", total_detections)
+            col3.metric("Alerts Triggered", total_alerts)
+        
+            st.markdown("#### 🔍 Detected Object Breakdown")
+            st.dataframe(class_counts.rename("Count"))
+            
 # --- Camera Snapshot Mode ---
 elif input_mode == "Camera Snapshot":
     camera_image = st.camera_input("📸 Take a snapshot")
@@ -136,7 +161,7 @@ elif input_mode == "Camera Snapshot":
         if boxes is not None and boxes.cls is not None:
             for cls_id, conf_score, box in zip(boxes.cls.tolist(), boxes.conf.tolist(), boxes.xyxy.tolist()):
                 if conf_score >= confidence:
-                    x1, y1, x2, y2 = box
+                    x1, y1, x2, y2 = map(int, box)
                     class_name = model.names[int(cls_id)]
                     alert_triggered = "Yes" if class_name in alert_classes else "No"
                     if alert_triggered == "Yes":
@@ -145,10 +170,10 @@ elif input_mode == "Camera Snapshot":
                     detection_log.append({
                         "Class": class_name,
                         "Confidence (%)": round(conf_score * 100, 2),
-                        "X1": int(x1),
-                        "Y1": int(y1),
-                        "X2": int(x2),
-                        "Y2": int(y2),
+                        "X1": x1,
+                        "Y1": y1,
+                        "X2": x2,
+                        "Y2": y2,
                         "Alert Triggered": alert_triggered
                     })
 
@@ -159,4 +184,22 @@ elif input_mode == "Camera Snapshot":
             df_log.to_excel(excel_path, index=False)
 
             with open(excel_path, "rb") as ef:
-                st.download_button("📊 Download Snapshot Log (Excel)", ef, file_name="snapshot_log.xlsx")
+                st.download_button(" Download Snapshot Log (Excel)", ef, file_name="snapshot_log.xlsx")
+        # --- Dashboard Summary ---
+        if detection_log:
+            st.subheader(" Detection Summary")
+            df_summary = pd.DataFrame(detection_log)
+        
+            total_frames = df_summary["Frame"].nunique() if "Frame" in df_summary else 1
+            total_detections = len(df_summary)
+            total_alerts = df_summary[df_summary["Alert Triggered"] == "Yes"].shape[0]
+            class_counts = df_summary["Class"].value_counts()
+        
+            col1, col2, col3 = st.columns(3)
+            col1.metric("Frames Processed", total_frames)
+            col2.metric("Total Detections", total_detections)
+            col3.metric("Alerts Triggered", total_alerts)
+        
+            st.markdown("####  Detected Object Breakdown")
+            st.dataframe(class_counts.rename("Count"))
+
