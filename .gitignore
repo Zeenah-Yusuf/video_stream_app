@@ -27,7 +27,7 @@ Thumbs.db
 
 # Excel and output files (optional)
 # *.xlsx
-# *.csv
+*.csv
 
 # Videos and models (already handled by Git LFS)
 # *.mp4
