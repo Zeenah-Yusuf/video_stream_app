@@ -97,7 +97,11 @@ def process_video(video_path):
         frame_count += 1
         if frame_count % frame_skip != 0:
             continue
-        frame = cv2.resize(frame, (640, 360))
+
+        # Proportional resize to preserve aspect ratio
+        scale = 0.5
+        frame = cv2.resize(frame, None, fx=scale, fy=scale)
+
         timestamp = round(frame_count / fps, 2)
         results = model.predict(frame, conf=confidence)
         boxes = results[0].boxes
@@ -183,7 +187,6 @@ if input_mode == "Video Upload":
             with open(excel_path, "rb") as ef:
                 st.download_button("📊 Download Detection Log (Excel)", ef, file_name="detection_log.xlsx")
             show_summary(log)
-
 elif input_mode == "Camera Snapshot":
     camera_image = st.camera_input("📸 Take a snapshot")
     if camera_image:
