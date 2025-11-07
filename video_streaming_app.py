@@ -190,4 +190,7 @@ elif input_mode == "Camera Snapshot":
         log = process_snapshot(image)
         if log:
             df_log = pd.DataFrame(log)
-            excel_path = export_excel(df_log, "
+            excel_path = export_excel(df_log, "snapshot_log.xlsx")
+            with open(excel_path, "rb") as ef:
+                st.download_button("📊 Download Snapshot Log (Excel)", ef, file_name="snapshot_log.xlsx")
+            show_summary(log, mode="Snapshot")
