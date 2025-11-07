@@ -2,3 +2,8 @@
 *.pt filter=lfs diff=lfs merge=lfs -text
 videos/demo.mp4 filter=lfs diff=lfs merge=lfs -text
 models/best.pt filter=lfs diff=lfs merge=lfs -text
+*.avi filter=lfs diff=lfs merge=lfs -text
+*.mov filter=lfs diff=lfs merge=lfs -text
+*.xlsx filter=lfs diff=lfs merge=lfs -text
+*.onnx filter=lfs diff=lfs merge=lfs -text
+
