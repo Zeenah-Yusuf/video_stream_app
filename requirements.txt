@@ -8,3 +8,6 @@ seaborn
 pandas
 ultralytics
 pillow
+sort-tracker
+openpyxl
+matplotlib
