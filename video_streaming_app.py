@@ -80,8 +80,15 @@ def process_video(video_path):
     width, height = int(cap.get(3)), int(cap.get(4))
     fps = cap.get(cv2.CAP_PROP_FPS)
     total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+
+    # Resize scale
+    scale = 0.5
+    scaled_width = int(width * scale)
+    scaled_height = int(height * scale)
+
     output_path = os.path.join(tempfile.gettempdir(), "annotated_output.mp4")
-    out = cv2.VideoWriter(output_path, cv2.VideoWriter_fourcc(*'mp4v'), fps, (width, height))
+    out = cv2.VideoWriter(output_path, cv2.VideoWriter_fourcc(*'mp4v'), fps, (scaled_width, scaled_height))
+
     detection_log = []
     frame_count = 0
     stframe = st.empty()
@@ -98,10 +105,7 @@ def process_video(video_path):
         if frame_count % frame_skip != 0:
             continue
 
-        # Proportional resize to preserve aspect ratio
-        scale = 0.5
         frame = cv2.resize(frame, None, fx=scale, fy=scale)
-
         timestamp = round(frame_count / fps, 2)
         results = model.predict(frame, conf=confidence)
         boxes = results[0].boxes
@@ -167,7 +171,6 @@ def process_snapshot(image):
 
     st.success("✅ Detection complete!")
     return detection_log
-
 # --- Main Logic ---
 st.title("YOLOv5 Object Detection with Tracking & Alerts")
 
