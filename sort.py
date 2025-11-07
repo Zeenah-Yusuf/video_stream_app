@@ -139,6 +139,12 @@ def associate_detections_to_trackers(dets, trks, iou_threshold=0.3):
     matched_indices = linear_sum_assignment(-iou_matrix)
     matched_indices = np.array(list(zip(*matched_indices)))
 
+    if matched_indices.size == 0:
+        unmatched_dets = np.arange(len(dets))
+        unmatched_trks = np.arange(len(trks))
+        matches = np.empty((0, 2), dtype=int)
+        return matches, unmatched_dets, unmatched_trks
+
     unmatched_dets = [d for d in range(len(dets)) if d not in matched_indices[:, 0]]
     unmatched_trks = [t for t in range(len(trks)) if t not in matched_indices[:, 1]]
 
