@@ -10,3 +10,4 @@ ultralytics
 pillow
 openpyxl
 matplotlib
+filterpy
