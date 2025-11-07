@@ -25,7 +25,10 @@ st.markdown("""
 # --- Sidebar ---
 st.sidebar.title("⚙ Input Settings")
 input_mode = st.sidebar.radio("Choose Input Mode", ["Video Upload", "Camera Snapshot"])
-confidence = st.sidebar.slider("Detection Confidence", 0.5, 0.95, 0.85)
+confidence = st.sidebar.slider(
+    "Detection Confidence", 0.2, 0.95, 0.2,
+    help="Lower values detect more objects but may include false positives"
+)
 frame_skip = st.sidebar.slider("Frame Skip (for speed)", 1, 5, 2)
 
 # --- Main Title ---
