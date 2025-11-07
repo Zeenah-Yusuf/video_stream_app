@@ -37,7 +37,8 @@ def load_model():
 model = load_model()
 tracker = Sort()
 available_classes = list(model.names.values())
-alert_classes = st.sidebar.multiselect("Alert Classes (trigger warnings)", options=available_classes, default=["knife", "gun", "person"])
+default_alerts = [cls for cls in ["knife", "gun", "person"] if cls in available_classes]
+alert_classes = st.sidebar.multiselect("Alert Classes (trigger warnings)", options=available_classes, default=default_alerts)
 
 # --- Detection Logger ---
 def log_detection(cls_id, conf_score, box, model_names, alert_classes):
@@ -188,6 +189,8 @@ elif input_mode == "Camera Snapshot":
     if camera_image:
         image = Image.open(camera_image)
         log = process_snapshot(image)
+        if log:
+            df_log = pd.DataFrame(log)
         if log:
             df_log = pd.DataFrame(log)
             excel_path = export_excel(df_log, "snapshot_log.xlsx")
